@@ -1,0 +1,98 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f2f5fb;
+}
+
+.header {
+    background: #0b5ed7;
+    color: white;
+    text-align: center;
+    padding: 25px;
+}
+
+.container {
+    max-width: 850px;
+    margin: 30px auto;
+    padding: 0 20px;
+}
+
+.card, .result-card {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+}
+
+label {
+    display: block;
+    margin-top: 15px;
+    font-weight: bold;
+}
+
+select {
+    width: 100%;
+    padding: 10px;
+    margin-top: 6px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+
+button {
+    margin-top: 25px;
+    width: 100%;
+    padding: 12px;
+    background: #0b5ed7;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #084298;
+}
+
+.result-card ul {
+    margin-top: 15px;
+}
+
+.result-card li {
+    margin-bottom: 8px;
+}
+
+.btn {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 10px 20px;
+    background: #0b5ed7;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+}
+
+/* ===== Blood Pressure Guidelines Card ===== */
+.bp-guidelines {
+    margin-top: 30px;
+    background: #6f63d2;
+    color: white;
+    padding: 22px;
+    border-radius: 16px;
+}
+
+.bp-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.3);
+}
+
+.bp-row:last-child {
+    border-bottom: none;
+}
+
+.bp-row.crisis {
+    color: #ffd6d6;
+    font-weight: bold;
+}
