@@ -1,196 +1,379 @@
-from flask import Flask, render_template, request, flash
-import joblib
-import numpy as np
-import os
-import random
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hypertension Detection | Professional Health Assessment</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- 1. CSS VARIABLES (From your snippet) --- */
+        :root {
+            --primary-medical: #0052CC;
+            --secondary-medical: #E8F4FD;
+            --success-medical: #10B981;
+            --warning-medical: #F59E0B;
+            --danger-medical: #EF4444;
+            --info-medical: #3B82F6;
+            --neutral-gray: #64748B;
+            --light-bg: #F8FAFC;
+            --white: #FFFFFF;
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
 
-app = Flask(__name__)
-app.secret_key = 'your-secret-key-change-in-production'
+        /* --- 2. GLOBAL RESET --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f0f4ff 0%, #e0e7ff 100%);
+            min-height: 100vh;
+            color: #1e293b;
+            padding-bottom: 50px;
+        }
 
-# --- 1. Load Trained Model ---
-try:
-    # Ensure the model file name matches what you saved earlier (e.g., 'logreg_model.pkl')
-    model = joblib.load("logreg_model.pkl")
-    print("Model loaded successfully.")
-except FileNotFoundError:
-    print("Warning: Model file not found. Using dummy predictions for demo.")
-    model = None
+        /* --- 3. HEADER --- */
+        .medical-header {
+            background: linear-gradient(135deg, var(--primary-medical) 0%, #1b783a 100%);
+            color: white;
+            padding: 2rem 0;
+            box-shadow: var(--shadow-lg);
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        
+        .medical-header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .medical-header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
 
-# --- 2. Mappings & Configuration ---
+        /* --- 4. CONTAINER & LAYOUT --- */
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
 
-# Map numeric prediction to text
-stage_map = {
-    0: 'NORMAL',
-    1: 'HYPERTENSION (Stage-1)',
-    2: 'HYPERTENSION (Stage-2)',
-    3: 'HYPERTENSIVE CRISIS'
-}
+        .card {
+            background: var(--white);
+            border-radius: 16px;
+            box-shadow: var(--shadow-md);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border-top: 5px solid var(--primary-medical);
+        }
 
-# Medical-grade color mapping
-color_map = {
-    0: '#10B981',  # Medical green (Normal)
-    1: '#F59E0B',  # Medical amber (Stage 1)
-    2: '#F97316',  # Medical orange (Stage 2)
-    3: '#EF4444'   # Medical red (Crisis)
-}
+        /* --- 5. FORM GRID SYSTEM --- */
+        .form-section-title {
+            color: var(--primary-medical);
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 2px solid var(--secondary-medical);
+            padding-bottom: 10px;
+        }
 
-# Detailed Recommendations
-recommendations = {
-    0: {
-        'title': 'Normal Blood Pressure',
-        'description': 'Your cardiovascular risk assessment indicates normal blood pressure levels.',
-        'actions': [
-            'Maintain current healthy lifestyle',
-            'Regular physical activity (150 minutes/week)',
-            'Continue balanced, low-sodium diet',
-            'Annual blood pressure monitoring',
-            'Regular health check-ups'
-        ],
-        'priority': 'Low Risk'
-    },
-    1: {
-        'title': 'Stage 1 Hypertension',
-        'description': 'Mild elevation detected requiring lifestyle modifications and medical consultation.',
-        'actions': [
-            'Schedule appointment with healthcare provider',
-            'Implement DASH diet plan',
-            'Increase physical activity gradually',
-            'Monitor blood pressure bi-weekly',
-            'Reduce sodium intake (<2300mg/day)',
-            'Consider stress management techniques'
-        ],
-        'priority': 'Moderate Risk'
-    },
-    2: {
-        'title': 'Stage 2 Hypertension',
-        'description': 'Significant hypertension requiring immediate medical intervention and treatment.',
-        'actions': [
-            'URGENT: Consult physician within 1-2 days',
-            'Likely medication therapy required',
-            'Comprehensive cardiovascular assessment',
-            'Daily blood pressure monitoring',
-            'Strict dietary sodium restriction',
-            'Lifestyle modification counseling'
-        ],
-        'priority': 'High Risk'
-    },
-    3: {
-        'title': 'Hypertensive Crisis',
-        'description': 'CRITICAL: Dangerously elevated blood pressure requiring emergency medical care.',
-        'actions': [
-            'EMERGENCY: Seek immediate medical attention',
-            'Call 911 if experiencing symptoms',
-            'Do not delay treatment',
-            'Monitor for stroke/heart attack signs',
-            'Prepare current medication list',
-            'Avoid physical exertion'
-        ],
-        'priority': 'EMERGENCY'
-    }
-}
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
 
-# --- 3. Routes ---
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #334155;
+            font-size: 0.9rem;
+        }
 
-@app.route('/')
-def home():
-    return render_template('index.html')
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background-color: #f8fafc;
+        }
 
-@app.route('/predict', methods=['POST'])
-def predict():
-    try:
-        if request.method == 'POST':
-            # A. Collect Inputs
-            required_fields = ['Gender', 'Age', 'History', 'Patient', 'TakeMedication', 
-                               'Severity', 'BreathShortness', 'VisualChanges', 'NoseBleeding', 
-                               'Whendiagnoused', 'Systolic', 'Diastolic', 'ControlledDiet']
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-medical);
+            box-shadow: 0 0 0 3px rgba(0, 82, 204, 0.1);
+            background-color: white;
+        }
+
+        /* --- 6. BUTTONS --- */
+        .btn-medical {
+            background: var(--primary-medical);
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-medical:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+            background: #137213;
+        }
+
+        /* --- 7. ALERTS & RESULTS --- */
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            font-weight: 500;
+        }
+        .alert-error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+        .alert-info { background: #e0f2fe; color: #0e7554; border: 1px solid #7dd478; }
+
+        /* Results Section Styling */
+        #result-section {
+            scroll-margin-top: 2rem;
+        }
+        
+        .result-header {
+            text-align: center;
+            padding: 2rem;
+            border-radius: 12px;
+            color: white;
+            margin-bottom: 2rem;
+        }
+
+        .recommendation-list {
+            list-style: none;
+        }
+        
+        .recommendation-list li {
+            position: relative;
+            padding-left: 30px;
+            margin-bottom: 12px;
+            font-size: 1.05rem;
+            color: #334155;
+        }
+        
+        .recommendation-list li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: var(--success-medical);
+            font-weight: bold;
+        }
+
+    </style>
+</head>
+<body>
+
+    <header class="medical-header">
+        <div class="container">
+            <h1>CardioGuard AI</h1>
+            <p>Advanced Hypertension Risk Assessment System</p>
+        </div>
+    </header>
+
+    <div class="container">
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        <i class="fas fa-info-circle"></i> {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% if prediction_text %}
+        <div id="result-section" class="card">
+            <div class="result-header" style="background-color: {{ result_color }};">
+                <h3>Assessment Complete</h3>
+                <h1 style="font-size: 2.5rem; margin: 10px 0;">{{ prediction_text }}</h1>
+                <p><i class="fas fa-chart-line"></i> AI Confidence Score: <strong>{{ confidence }}%</strong></p>
+            </div>
+
+            <div class="form-grid">
+                <div style="grid-column: span 2;">
+                    <h3 class="form-section-title"><i class="fas fa-user-md"></i> Clinical Interpretation</h3>
+                    <p style="font-size: 1.1rem; margin-bottom: 1.5rem;">
+                        <strong>Status:</strong> {{ recommendation.priority }}<br>
+                        {{ recommendation.description }}
+                    </p>
+                    
+                    <h4 style="margin-bottom: 1rem; color: #334155;">Recommended Actions:</h4>
+                    <ul class="recommendation-list">
+                        {% for action in recommendation.actions %}
+                            <li>{{ action }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
             
-            form_data = {}
-            for field in required_fields:
-                value = request.form.get(field)
-                if not value or value == "":
-                    flash(f"Please complete all required fields: {field}", "error")
-                    return render_template('index.html')
-                form_data[field] = value
+            <div style="text-align: center;">
+                <a href="/" class="btn-medical" style="background-color: var(--neutral-gray); display: inline-flex; width: auto;">
+                    <i class="fas fa-redo"></i> Perform New Assessment
+                </a>
+            </div>
+        </div>
+        {% endif %}
 
-            # B. Encode Inputs (Manual Encoding to match training logic)
-            try:
-                # Note: These mappings must match your training script exactly
-                encoded = [
-                    0 if form_data['Gender'] == 'Male' else 1,
-                    {'18-34': 1, '35-50': 2, '51-64': 3, '65+': 4}[form_data['Age']],
-                    1 if form_data['History'] == 'Yes' else 0,
-                    1 if form_data['Patient'] == 'Yes' else 0,
-                    1 if form_data['TakeMedication'] == 'Yes' else 0,
-                    {'Mild': 0, 'Moderate': 1, 'Severe': 2}[form_data['Severity']],
-                    1 if form_data['BreathShortness'] == 'Yes' else 0,
-                    1 if form_data['VisualChanges'] == 'Yes' else 0,
-                    1 if form_data['NoseBleeding'] == 'Yes' else 0,
-                    {'<1 Year': 1, '1-5 Years': 2, '>5 Years': 3}[form_data['Whendiagnoused']],
-                    {'100 - 110': 0, '111 - 120': 1, '121 - 130': 2, '130+': 3}[form_data['Systolic']],
-                    {'70 - 80': 0, '81 - 90': 1, '91 - 100': 2, '100+': 3}[form_data['Diastolic']],
-                    1 if form_data['ControlledDiet'] == 'Yes' else 0
-                ]
-            except KeyError as e:
-                flash(f"Invalid selection detected: {str(e)}", "error")
-                return render_template('index.html')
 
-            # C. Feature Scaling (Manual Scaling)
-            # This replicates the MinMaxScaler logic: (x - min) / (max - min)
-            # Since min is always 0 for these encoded values, it simplifies to x / max
-            scaled_encoded = list(encoded).copy() # Use list copy to avoid reference issues
-            
-            # Age: 1-4 -> Scaled 0-1 (Formula: (x-1)/3)
-            # Note: In training, we mapped 18-34 to 1. If using MinMaxScaler on 1,2,3,4:
-            # 1->0.0, 2->0.33, 3->0.66, 4->1.0
-            scaled_encoded[1] = (encoded[1] - 1) / 3.0 
-            
-            # Severity: 0,1,2 -> Scaled 0-1 (Formula: x/2)
-            scaled_encoded[5] = encoded[5] / 2.0
-            
-            # WhenDiagnosed: 1,2,3 -> Scaled 0-1 (Formula: (x-1)/2)
-            scaled_encoded[9] = (encoded[9] - 1) / 2.0
-            
-            # Systolic: 0,1,2,3 -> Scaled 0-1 (Formula: x/3)
-            scaled_encoded[10] = encoded[10] / 3.0
-            
-            # Diastolic: 0,1,2,3 -> Scaled 0-1 (Formula: x/3)
-            scaled_encoded[11] = encoded[11] / 3.0
+        <div class="card">
+            <form action="/predict" method="POST">
+                
+                <h3 class="form-section-title">Patient Demographics</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Gender</label>
+                        <select name="Gender" class="form-control" required>
+                            <option value="" disabled selected>Select Gender</option>
+                            <option value="Male" {% if form_data and form_data['Gender'] == 'Male' %}selected{% endif %}>Male</option>
+                            <option value="Female" {% if form_data and form_data['Gender'] == 'Female' %}selected{% endif %}>Female</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Age Group</label>
+                        <select name="Age" class="form-control" required>
+                            <option value="" disabled selected>Select Age Group</option>
+                            <option value="18-34" {% if form_data and form_data['Age'] == '18-34' %}selected{% endif %}>18-34 Years</option>
+                            <option value="35-50" {% if form_data and form_data['Age'] == '35-50' %}selected{% endif %}>35-50 Years</option>
+                            <option value="51-64" {% if form_data and form_data['Age'] == '51-64' %}selected{% endif %}>51-64 Years</option>
+                            <option value="65+" {% if form_data and form_data['Age'] == '65+' %}selected{% endif %}>65+ Years</option>
+                        </select>
+                    </div>
+                </div>
 
-            # Convert to numpy array for model
-            input_array = np.array(scaled_encoded).reshape(1, -1)
+                <h3 class="form-section-title"> Medical History</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Family History of Hypertension?</label>
+                        <select name="History" class="form-control" required>
+                            <option value="Yes" {% if form_data and form_data['History'] == 'Yes' %}selected{% endif %}>Yes</option>
+                            <option value="No" {% if form_data and form_data['History'] == 'No' %}selected{% endif %}>No</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Currently a Patient?</label>
+                        <select name="Patient" class="form-control" required>
+                            <option value="Yes" {% if form_data and form_data['Patient'] == 'Yes' %}selected{% endif %}>Yes</option>
+                            <option value="No" {% if form_data and form_data['Patient'] == 'No' %}selected{% endif %}>No</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Currently Taking Medication?</label>
+                        <select name="TakeMedication" class="form-control" required>
+                            <option value="Yes" {% if form_data and form_data['TakeMedication'] == 'Yes' %}selected{% endif %}>Yes</option>
+                            <option value="No" {% if form_data and form_data['TakeMedication'] == 'No' %}selected{% endif %}>No</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Time Since Diagnosis</label>
+                        <select name="Whendiagnoused" class="form-control" required>
+                            <option value="<1 Year" {% if form_data and form_data['Whendiagnoused'] == '<1 Year' %}selected{% endif %}>Less than 1 Year</option>
+                            <option value="1-5 Years" {% if form_data and form_data['Whendiagnoused'] == '1-5 Years' %}selected{% endif %}>1 - 5 Years</option>
+                            <option value=">5 Years" {% if form_data and form_data['Whendiagnoused'] == '>5 Years' %}selected{% endif %}>More than 5 Years</option>
+                        </select>
+                    </div>
+                </div>
 
-            # D. Prediction
-            if model is not None:
-                prediction = model.predict(input_array)[0]
-                try:
-                    # Get probability of the predicted class
-                    confidence = np.max(model.predict_proba(input_array)) * 100
-                except:
-                    confidence = 85.0 # Fallback
-            else:
-                # Demo Mode (if model failed to load)
-                prediction = random.randint(0, 3)
-                confidence = 87.5
-                flash("Demo Mode: Using simulated AI prediction", "info")
+                <h3 class="form-section-title"> Clinical Symptoms</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Symptom Severity</label>
+                        <select name="Severity" class="form-control" required>
+                            <option value="Mild" {% if form_data and form_data['Severity'] == 'Mild' %}selected{% endif %}>Mild</option>
+                            <option value="Moderate" {% if form_data and form_data['Severity'] == 'Moderate' %}selected{% endif %}>Moderate</option>
+                            <option value="Severe" {% if form_data and form_data['Severity'] == 'Severe' %}selected{% endif %}>Severe</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Shortness of Breath?</label>
+                        <select name="BreathShortness" class="form-control" required>
+                            <option value="No">No</option>
+                            <option value="Yes">Yes</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Visual Changes?</label>
+                        <select name="VisualChanges" class="form-control" required>
+                            <option value="No">No</option>
+                            <option value="Yes">Yes</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Nose Bleeding?</label>
+                        <select name="NoseBleeding" class="form-control" required>
+                            <option value="No">No</option>
+                            <option value="Yes">Yes</option>
+                        </select>
+                    </div>
+                </div>
 
-            # E. Prepare Result Data
-            result_text = stage_map[prediction]
-            result_color = color_map[prediction]
-            result_rec = recommendations[prediction]
+                <h3 class="form-section-title"> Vitals & Lifestyle</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Systolic BP (Upper Range)</label>
+                        <select name="Systolic" class="form-control" required>
+                            <option value="100 - 110">100 - 110 mmHg</option>
+                            <option value="111 - 120">111 - 120 mmHg</option>
+                            <option value="121 - 130">121 - 130 mmHg</option>
+                            <option value="130+">130+ mmHg</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Diastolic BP (Lower Range)</label>
+                        <select name="Diastolic" class="form-control" required>
+                            <option value="70 - 80">70 - 80 mmHg</option>
+                            <option value="81 - 90">81 - 90 mmHg</option>
+                            <option value="91 - 100">91 - 100 mmHg</option>
+                            <option value="100+">100+ mmHg</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Follows Controlled Diet?</label>
+                        <select name="ControlledDiet" class="form-control" required>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+                </div>
 
-            return render_template('index.html', 
-                                   prediction_text=result_text,
-                                   result_color=result_color,
-                                   confidence=round(confidence, 1),
-                                   recommendation=result_rec,
-                                   form_data=form_data,
-                                   scroll_to_result=True)
+                <button type="submit" class="btn-medical">
+                    <i class="fas fa-stethoscope"></i> Analyze Patient Data
+                </button>
 
-    except Exception as e:
-        # Log the actual error for debugging
-        print(f"Error: {e}")
-        flash(f"System error occurred. Please try again.", "error")
-        return render_template('index.html')
+            </form>
+        </div>
+    </div>
 
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    {% if prediction_text %}
+    <script>
+        document.getElementById('result-section').scrollIntoView({ behavior: 'smooth' });
+    </script>
+    {% endif %}
+
+</body>
+</html>
